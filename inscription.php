@@ -1,0 +1,108 @@
+<?php include("vues/header.php"); ?>
+
+<?php
+// si l'utilisateur a cliqué sur le bouton inscription ...
+    if(isset($_POST['inscription']))
+{
+// si le champs et vide ou on recupère la saissi de l'utilisateur
+// Expression régulière preg_match qui est différent que se qui est demandé
+// 
+if(empty($_POST['username']) || !preg_match('/[a_zA-Z0-9]+/', $_POST['username']))
+    {
+        $message = 'Votre username doit être une chaîne de caractères (alphanumérique) !';
+    }
+// filter_var fonction qui permet de vérifier si se qui est saisi est bien un email
+    elseif(empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL))
+    {
+        $message = "Rentrer une adresse email valide !";
+    }
+    elseif(empty($_POST['password']) || $_POST['password'] != $_POST['password2'])
+    {
+        $message = 'Rentrer un mot de passe valide !';
+    }
+    else
+    {
+        require 'connexion.php';
+
+// pour éviter les doublons
+        $req1 = $monPdo->prepare('SELECT * FROM bibliomougins.adherent WHERE email = :email');
+        
+        $req1->bindvalue(':email', $_POST['email']);
+        $req1->execute();
+        $result1 = $req1->fetch();
+
+        if($result1)
+        {
+            $message = 'Un compte existe déjà avec l\'adresse email que vous avez choisie';
+        }
+        else
+        {
+//Hash le password utilisé
+        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        
+// permet d'inserer les informations dans notre base de donnée
+        $requette = $monPdo->prepare('INSERT INTO bibliomougins.adherent(username,email,password) VALUES (:username, :email, :password)');
+
+$requette->bindvalue('username', $_POST['username']);
+$requette->bindvalue('email', $_POST['email']);
+$requette->bindvalue('password', $password);
+
+$requette->execute();
+
+$message = 'Vous êtes bien enregistré';
+    }
+}
+}
+?>
+
+
+    <!-- Formulaire -->
+
+
+    <section class="bg-light py-5 mt-5">
+        <div id="login">          
+            <div class="container">
+                <div id="login-row" class="row justify-content-center align-items-center">
+                    <div id="login-column" class="col-md-6">
+                        <div id="login-box" class="col-md-12">
+                        <?php if (isset ($message)) echo $message;?>
+                            <form id="login-form" class="form" action="" method="post">
+                                <h3 class="text-center text-info"><i class="fa fa-lock" aria-hidden="true"></i> Inscription</h3>
+    
+                                <div class="form-group">
+                                    <label for="username" class="text-info"><i class="fas fa-user-tie"></i> Username :</label><br>
+                                        <input type="text" name="username" id="username" class="form-control">
+                                </div>
+    
+                                <div class="form-group">
+                                    <label for="email" class="text-info"><i class="fas fa-envelope"></i> Adresse email :</label><br>
+                                        <input type="email" name="email" id="email" class="form-control">
+                                </div>
+    
+                                <div class="form-group">
+                                    <div class="form-group">
+                                        <label for="password" class="text-info"><i class="fa fa-key icon"></i> Password :</label><br>
+                                            <input type="text" name="password" id="password" class="form-control">
+                                    </div>
+                                </div>
+    
+                                <div class="form-group">
+                                    <div class="form-group">
+                                        <label for="password2" class="text-info"><i class="fa fa-key icon"></i> Confirmation du password :</label><br>
+                                            <input type="text" name="password2" id="password2" class="form-control">
+                                </div>
+                                
+                                    <input type="submit" name="inscription" class="btn btn-primary btn-md" value="S'inscrire">
+                                    <a href="seConnecter.php" class="btn btn-primary btn-md">Se connecter</a>
+                                    <a href="index.php" class="btn btn-primary btn-md">Retour accueil</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br><br>
+    </section>
+
+<?php include("vues/footer.php"); ?>
